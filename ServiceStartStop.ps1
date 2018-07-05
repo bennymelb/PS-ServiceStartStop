@@ -14,6 +14,8 @@ param (
 	[string]$bin, 
 	[string]$lib, 
 	[string]$logfile, 
+	[string]$oldlogfolder,
+	[int16]$LogRetention,
 	[string]$debug 
 )
 
@@ -66,6 +68,21 @@ $env:PSModulePath = $env:PSModulePath + ";$lib"
 
 # Import the logging module
 Import-Module logging.psm1 -ErrorAction Stop
+
+# log house keeping - rotation and archive the old log
+if ($logfile)
+{
+	log-rotate -oldlogfolder $oldlogfolder -logfile $logfile
+	if (!$logretention)
+	{
+		$env:logretention = 0		
+	}
+	else 
+	{
+		$env:logretention = $LogRetention	
+	}
+	log-archive -source $oldlogfolder -archive $($oldlogfolder + "\" + $($([System.IO.FileInfo]$logfile).BaseName) + ".zip")
+}
 
 # Put a starting line in the log file to improve readability
 log -logstring "************************ $cmd is triggered by $(whoami) ************************ " -app $cmd -logfile $logfile
